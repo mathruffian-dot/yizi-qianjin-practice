@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>一字千金 21季 單人賽 練習系統</title>
+<style>
+:root{
+  --bg:#0d1b2a; --panel:#16283d; --panel2:#1e3450; --line:#2d4a6b;
+  --gold:#f0c14b; --gold2:#ffe08a; --txt:#eaf2fb; --dim:#8fa9c4;
+  --ok:#3ec46d; --no:#e6524f; --blue:#4aa3ff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(160deg,#0a1622,#132a42 60%,#0a1622);
+  color:var(--txt);font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+  min-height:100vh;padding:0 0 60px}
+header{padding:18px 20px 10px;text-align:center;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:26px;letter-spacing:6px;color:var(--gold)}
+header p{margin:6px 0 0;color:var(--dim);font-size:13px;letter-spacing:1px}
+nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:14px 12px}
+nav button{background:var(--panel);color:var(--txt);border:1px solid var(--line);
+  padding:10px 18px;border-radius:999px;cursor:pointer;font-size:15px;letter-spacing:2px}
+nav button.on{background:var(--gold);color:#12243a;border-color:var(--gold);font-weight:bold}
+main{max-width:980px;margin:0 auto;padding:0 14px}
+section{display:none}
+section.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px}
+.timer{font-size:34px;font-weight:bold;color:var(--gold2);min-width:90px;text-align:center;
+  font-variant-numeric:tabular-nums}
+.timer.warn{color:#ff9b4a}
+.timer.dead{color:var(--no)}
+.score{color:var(--dim);font-size:14px;letter-spacing:1px}
+.score b{color:var(--gold);font-size:18px}
+button.act{background:var(--gold);color:#12243a;border:0;padding:10px 20px;border-radius:8px;
+  cursor:pointer;font-size:15px;font-weight:bold;letter-spacing:2px}
+button.act:disabled{opacity:.4;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold)}
+input[type=text]{background:#0c1a29;border:1px solid var(--line);color:var(--txt);
+  padding:10px 14px;border-radius:8px;font-size:20px;letter-spacing:6px;width:220px;
+  font-family:inherit;text-align:center}
+.msg{margin-top:12px;font-size:16px;min-height:26px;letter-spacing:1px}
+.msg.ok{color:var(--ok)} .msg.no{color:var(--no)} .msg.tip{color:var(--gold2)}
+.hint{color:var(--dim);font-size:13px;line-height:1.8}
+.rulebox{background:#0f2135;border-left:3px solid var(--gold);padding:12px 14px;border-radius:0 8px 8px 0;
+  font-size:13.5px;line-height:1.9;color:#c6d8ea;margin-bottom:16px}
+
+/* 去無成字 */
+#qwStage{position:relative;height:270px;background:#fdfaf0;border-radius:12px;margin:6px 0 16px;
+  border:6px solid #e6dcc0;overflow:hidden}
+.part{position:absolute;font-size:62px;color:#1e5b3a;font-weight:bold;
+  font-family:"KaiTi","DFKai-SB","Microsoft JhengHei",serif;user-select:none}
+#qwStage .lab{position:absolute;left:10px;top:8px;color:#a8956a;font-size:13px;letter-spacing:4px}
+
+/* 四說新語 */
+.ids{display:flex;flex-direction:column;gap:8px;align-items:center;margin:8px 0 16px}
+.idiom{background:#fdfaf0;color:#123;border-radius:8px;padding:8px 10px;display:flex;gap:6px}
+.idiom span{width:44px;height:44px;line-height:44px;text-align:center;font-size:26px;
+  border:1px solid #cfc39c;border-radius:4px;font-family:"KaiTi","DFKai-SB",serif}
+.idiom span.mark{background:#ffe9a8;color:#b8342c;font-weight:bold}
+
+/* 成雙成對 */
+#pairGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:320px;margin:8px auto 16px}
+#pairGrid div{background:#e9eef4;color:#12243a;text-align:center;padding:12px 0;font-size:28px;
+  border-radius:6px;font-family:"KaiTi","DFKai-SB",serif}
+#pairFound{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+#pairFound span{background:#0f2135;border:1px solid var(--line);padding:4px 10px;border-radius:6px;font-size:18px}
+#pairFound span.miss{opacity:.45;color:var(--dim)}
+
+/* 隻字片語 */
+#board{border-collapse:collapse;margin:10px auto;background:#0a1724}
+#board td{width:38px;height:38px;border:1px solid #2b4666;text-align:center;
+  font-size:21px;cursor:pointer;font-family:"KaiTi","DFKai-SB",serif;color:#dbe9f8}
+#board td.me{background:#1b3f6b;color:#bfe0ff}
+#board td.ai{background:#5a2330;color:#ffd0d0}
+#board td.sel{outline:3px solid var(--gold);outline-offset:-3px}
+#board th{color:var(--dim);font-size:11px;font-weight:normal;padding:2px}
+.dirs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.dirs button{background:var(--panel);border:1px solid var(--line);color:var(--txt);
+  padding:8px 14px;border-radius:8px;cursor:pointer}
+.dirs button.on{background:var(--gold);color:#12243a;font-weight:bold}
+#log{max-height:150px;overflow:auto;font-size:13px;line-height:1.9;color:#b9cde2;
+  background:#0c1a29;border-radius:8px;padding:10px;margin-top:12px}
+table.info{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:10px}
+table.info td{border-bottom:1px solid var(--line);padding:6px 4px;color:#c6d8ea}
+table.info td:first-child{color:var(--gold2);white-space:nowrap;width:90px}
+
+/* 手寫板 */
+.padwrap{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:12px 0 6px}
+.pad canvas{width:150px;height:150px;background:#fffdf5;border:2px solid #cfc39c;border-radius:8px;
+  touch-action:none;display:block;cursor:crosshair}
+.pad .picked{height:32px;line-height:32px;text-align:center;font-size:24px;color:var(--gold);
+  font-family:"KaiTi","DFKai-SB",serif}
+.pad .picked.empty::after{content:"—";color:#44607d}
+.cands{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;min-height:36px;margin-top:4px;width:150px}
+.cands button{width:32px;height:32px;font-size:19px;background:#0f2135;border:1px solid var(--line);
+  color:var(--txt);border-radius:6px;cursor:pointer;font-family:"KaiTi","DFKai-SB",serif;padding:0}
+.cands button.on{background:var(--gold);color:#12243a;font-weight:bold}
+.cands .busy{color:var(--dim);font-size:12px;line-height:32px}
+.padtools{display:flex;gap:6px;justify-content:center;margin:4px 0 10px;flex-wrap:wrap}
+.padtools button{font-size:12px;padding:5px 10px;background:transparent;border:1px solid var(--line);
+  color:var(--dim);border-radius:6px;cursor:pointer}
+.padtools button:hover{color:var(--txt);border-color:var(--gold)}
+.kb{text-align:center;margin-top:6px}
+.kb summary{color:var(--dim);font-size:12px;cursor:pointer;list-style:none}
+.kb summary::-webkit-details-marker{display:none}
+#hwArea{background:#fffdf5;border-radius:12px;padding:10px;display:flex;gap:14px;
+  justify-content:center;flex-wrap:wrap;min-height:180px;align-items:center}
+#hwArea svg{border:1px dashed #d6c9a4;border-radius:6px}
+.solink{color:var(--blue);font-size:13px}
+@media(max-width:600px){
+  #board td{width:30px;height:30px;font-size:17px}
+  .part{font-size:48px}
+  input[type=text]{width:170px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>一 字 千 金</h1>
+  <p>21 季 單人賽（A 版）· 個人練習系統 · 答案標準：教育部重編國語辭典修訂本</p>
+</header>
+
+<nav>
+  <button data-t="s1" class="on">去無成字 30″</button>
+  <button data-t="s2">四說新語 40″</button>
+  <button data-t="s3">成雙成對 30″</button>
+  <button data-t="s4">隻字片語 60″</button>
+  <button data-t="s5">筆順練習</button>
+</nav>
+
+<main>
+
+<!-- ============ 去無成字 ============ -->
+<section id="s1" class="on">
+  <div class="card">
+    <div class="rulebox">
+      <b>規則</b>：題目出四個文字部件，請<b>去除一個</b>，將保留的<b>三個部件組合</b>，寫出一字正確答案即可得分。<br>
+      <b>節目實況</b>：部件會<b>旋轉、斜放</b>散置，必須先在腦中轉正；八人同時作答，答對得 1 分。
+    </div>
+    <div class="bar">
+      <div class="timer" id="t1">30</div>
+      <div class="score">得分 <b id="sc1">0</b> ／ 已作答 <b id="n1">0</b></div>
+      <button class="act" id="go1">開始出題</button>
+    </div>
+    <div id="qwStage"><div class="lab">請去除一個部件，排列組合寫出一字</div></div>
+    <div class="padwrap" id="pads1"></div>
+    <div class="padtools" id="tools1"></div>
+    <div style="text-align:center">
+      <button class="act" id="ok1" disabled>送出</button>
+      <button class="act ghost" id="give1" disabled>放棄看答案</button>
+      <details class="kb"><summary>▸ 手寫辨識不出來？改用鍵盤輸入</summary>
+        <input type="text" id="in1" maxlength="1" placeholder="答案" style="margin-top:8px"></details>
+    </div>
+    <div class="msg" id="m1"></div>
+    <div class="hint" style="margin-top:10px">
+      <b>解題法</b>：先鎖定最像「部首」的那一個（辶／氵／扌／艹／宀／广／彳／豸／言／疒），假設它一定用得到，再從其餘三個湊聲符。<br>
+      <b>易錯</b>：士↔土、日↔曰、己↔已↔巳、末↔未、刀↔力、示↔礻。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 四說新語 ============ -->
+<section id="s2">
+  <div class="card">
+    <div class="rulebox">
+      <b>規則</b>：題目出四句成語，從<b>每一句各挑一個字</b>，組成一句<b>新的四字成語</b>。<br>
+      <b>計分</b>：20 秒時系統提示 1 字；<b>提示前答對 2 分、提示後答對 1 分</b>。<br>
+      <b>關鍵</b>：取出的四個字<b>順序可以重排</b>，不必照題目由上到下的順序。
+    </div>
+    <div class="bar">
+      <div class="timer" id="t2">40</div>
+      <div class="score">得分 <b id="sc2">0</b> ／ 已作答 <b id="n2">0</b></div>
+      <button class="act" id="go2">開始出題</button>
+    </div>
+    <div class="ids" id="ids2"></div>
+    <div class="padwrap" id="pads2"></div>
+    <div class="padtools" id="tools2"></div>
+    <div style="text-align:center">
+      <button class="act" id="ok2" disabled>送出</button>
+      <button class="act ghost" id="give2" disabled>放棄看答案</button>
+      <details class="kb"><summary>▸ 手寫辨識不出來？改用鍵盤輸入</summary>
+        <input type="text" id="in2" maxlength="4" placeholder="四字成語" style="margin-top:8px"></details>
+    </div>
+    <div class="msg" id="m2"></div>
+  </div>
+</section>
+
+<!-- ============ 成雙成對 ============ -->
+<section id="s3">
+  <div class="card">
+    <div class="rulebox">
+      <b>規則</b>：題目出 16 個中文部件，於 30 秒內從中挑<b>兩個部件</b>組成一個字，<b>不可重複</b>。<br>
+      <b>節目實況</b>：畫面會顯示「剩下 N 個字」，代表答案有標準總數；現場由「字庫智庫」老師舉 O／X 即時判定。
+    </div>
+    <div class="bar">
+      <div class="timer" id="t3">30</div>
+      <div class="score">已寫出 <b id="sc3">0</b> ／ 剩下 <b id="left3">0</b> 個字</div>
+      <button class="act" id="go3">開始出題</button>
+    </div>
+    <div id="pairGrid"></div>
+    <div class="padwrap" id="pads3"></div>
+    <div class="padtools" id="tools3"></div>
+    <div style="text-align:center">
+      <button class="act" id="ok3" disabled>送出</button>
+      <button class="act ghost" id="give3" disabled>公布全部答案</button>
+      <details class="kb"><summary>▸ 手寫辨識不出來？改用鍵盤輸入</summary>
+        <input type="text" id="in3" maxlength="1" placeholder="寫一字" style="margin-top:8px"></details>
+    </div>
+    <div class="msg" id="m3"></div>
+    <div id="pairFound"></div>
+    <div class="hint" style="margin-top:10px">
+      <b>解題法</b>：不要窮舉 240 種組合。先掃出所有能當<b>左偏旁</b>的部件（扌／氵／木／女／米／王／山／口／言／疒／糹），
+      每個偏旁再掃過其餘 15 格找聲符，搜尋量降到 4～6 × 15。左右結構優先，上下結構次之。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 隻字片語 ============ -->
+<section id="s4">
+  <div class="card">
+    <div class="rulebox">
+      <b>規則書寫的</b>：出一字，兩人輪流以成語接龍方式寫出答案，每回合 60 秒；限時內未寫出，或<b>寫到對手無格子可寫</b>者獲勝。<br>
+      <b>影片揭露的真實玩法</b>：這是一個 <b>12 欄(A–L) × 8 列(1–8) 的填字盤</b>。每回合寫一句四字成語，
+      必須<b>與盤上已有的某一個字交會共用</b>；可<b>橫排或直排</b>，且<b>可以反向書寫</b>（由右往左、由下往上）；
+      共用的字<b>不限頭尾</b>。<b>剩 20 秒可求救一次</b>。
+    </div>
+    <div class="bar">
+      <div class="timer" id="t4">60</div>
+      <div class="score">我 <b id="sc4">0</b> 句 ／ 電腦 <b id="sc4b">0</b> 句</div>
+      <button class="act" id="go4">開新局</button>
+      <button class="act ghost" id="sos4" disabled>求救（限一次）</button>
+    </div>
+
+    <div style="text-align:center;color:var(--dim);font-size:13px">
+      ① 點盤面選「起筆格」 ② 選方向 ③ 輸入四字成語 → 送出
+    </div>
+    <div id="boardWrap" style="overflow:auto"></div>
+    <div class="dirs" id="dirs4">
+      <button data-d="R" class="on">→ 向右</button>
+      <button data-d="L">← 向左</button>
+      <button data-d="D">↓ 向下</button>
+      <button data-d="U">↑ 向上</button>
+    </div>
+    <div style="text-align:center">
+      <span style="color:var(--dim);font-size:13px" id="sel4">起筆格：未選</span>
+    </div>
+    <div class="padwrap" id="pads4"></div>
+    <div class="padtools" id="tools4"></div>
+    <div style="text-align:center">
+      <button class="act" id="ok4" disabled>送出</button>
+      <details class="kb"><summary>▸ 手寫辨識不出來？改用鍵盤輸入</summary>
+        <input type="text" id="in4" maxlength="4" placeholder="四字成語" style="margin-top:8px"></details>
+    </div>
+    <div class="msg" id="m4"></div>
+    <div id="log"></div>
+    <div class="hint" style="margin-top:12px">
+      <b>戰術</b>：① 別一直往中央塞，中央塞滿你自己也沒地方寫；主動往邊緣角落發展。<br>
+      ② 多練「用該字<b>結尾</b>」與「該字在<b>第 2、3 位</b>」的成語，落點自由度最大。<br>
+      ③ 後期每寫一句先數對手還剩幾個落點，能封死就封死。
+    </div>
+  </div>
+</section>
+
+<!-- ============ 筆順練習 ============ -->
+<section id="s5">
+  <div class="card">
+    <div class="rulebox">
+      節目書寫以<b>教育部標準楷書</b>為準，筆順錯誤在鏡頭前很明顯，也會影響手寫辨識。<br>
+      這裡可以<b>看動畫</b>學筆順，也可以<b>照著描</b>——描錯順序會被擋下並提示正確的下一筆。
+    </div>
+    <div style="text-align:center;margin-bottom:12px">
+      <input type="text" id="hwIn" maxlength="4" placeholder="輸入 1～4 個字" style="width:200px">
+      <button class="act" id="hwGo">載入</button>
+    </div>
+    <div class="padtools">
+      <button id="hwPlay">▶ 播放筆順動畫</button>
+      <button id="hwQuiz">✍ 描紅測驗（會擋錯誤筆順）</button>
+      <button id="hwOutline">顯示／隱藏底圖</button>
+    </div>
+    <div id="hwArea"><span style="color:#a8956a;font-size:14px">輸入國字後按「載入」</span></div>
+    <div class="msg" id="m5"></div>
+    <div class="hint" style="margin-top:14px">
+      <b>權威查詢（教育部官方，建議正式以此為準）</b><br>
+      · <a class="solink" href="https://stroke-order.learningweb.moe.edu.tw/searchW.jsp?ID2=1" target="_blank">國字標準字體筆順學習網 — 國字查詢</a>（貼上字即可查，含動畫與筆順分解）<br>
+      · <a class="solink" href="https://dict.revised.moe.edu.tw/" target="_blank">教育部重編國語辭典修訂本</a>（本節目的答案認定依據）<br>
+      · <a class="solink" href="https://dict.variants.moe.edu.tw/" target="_blank">教育部異體字字典</a>（判斷寫法是否為可接受的字形）<br><br>
+      <b>七大通則（教育部《國字標準字體筆順手冊》原則）</b><br>
+      ① 由上而下　② 由左而右　③ 先橫後豎　④ 先撇後捺<br>
+      ⑤ 先外後內、最後封口（如「口」「國」）　⑥ 中間先於兩邊（如「小」「水」）<br>
+      ⑦ 「辶」「廴」最後寫（先寫裡面的字）<br><br>
+      <b>公認容易寫錯順序、上場前務必逐字查證的字</b><br>
+      必、凸、凹、方、乃、及、飛、成、火、王<br>
+      區、匹、匠（匚部）／鼎、噩、爨、鹿、慶、鬱<br>
+      <span style="color:#e0a24a">這些字的標準筆順各家教材說法不一，
+      請直接在上方「國字標準字體筆順學習網」逐字確認，不要憑印象。</span>
+    </div>
+    <div class="hint" style="margin-top:10px;color:#7e97b0">
+      註：本頁動畫資料來自開源字型筆順資料庫（需連網），少數字可能沒有資料；
+      正式練習請以上方教育部官方網站為準。
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* ===================== 共用 ===================== */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+$$('nav button').forEach(b=>b.onclick=()=>{
+  $$('nav button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  $$('section').forEach(x=>x.classList.remove('on')); $('#'+b.dataset.t).classList.add('on');
+});
+function mkTimer(el,total,onTick,onEnd){
+  let left=total,id=null;
+  const paint=()=>{el.textContent=left;el.className='timer'+(left<=10?' dead':left<=20?' warn':'')};
+  paint();
+  return {
+    start(){clearInterval(id);left=total;paint();
+      id=setInterval(()=>{left--;paint();if(onTick)onTick(left);if(left<=0){clearInterval(id);onEnd&&onEnd()}},1000)},
+    stop(){clearInterval(id)}, left:()=>left
+  };
+}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* ============ 手寫板 + 線上辨識 ============ */
+const PADPX=300; // canvas 內部解析度
+class Pad{
+  constructor(host){
+    this.el=document.createElement('div');this.el.className='pad';
+    this.cv=document.createElement('canvas');this.cv.width=this.cv.height=PADPX;
+    this.pick=document.createElement('div');this.pick.className='picked empty';
+    this.cands=document.createElement('div');this.cands.className='cands';
+    this.el.append(this.cv,this.pick,this.cands);host.appendChild(this.el);
+    this.ctx=this.cv.getContext('2d');this.strokes=[];this.value='';this.timer=null;
+    this.grid();this.bind();
+  }
+  grid(){
+    const c=this.ctx,N=PADPX;
+    c.clearRect(0,0,N,N);c.fillStyle='#fffdf5';c.fillRect(0,0,N,N);
+    c.save();c.strokeStyle='#e3d7b4';c.lineWidth=2;c.setLineDash([8,8]);
+    c.beginPath();c.moveTo(N/2,0);c.lineTo(N/2,N);c.moveTo(0,N/2);c.lineTo(N,N/2);
+    c.moveTo(0,0);c.lineTo(N,N);c.moveTo(N,0);c.lineTo(0,N);c.stroke();c.restore();
+  }
+  redraw(){
+    this.grid();const c=this.ctx;
+    c.strokeStyle='#14304d';c.lineWidth=9;c.lineCap='round';c.lineJoin='round';
+    for(const s of this.strokes){
+      c.beginPath();c.moveTo(s.x[0],s.y[0]);
+      for(let i=1;i<s.x.length;i++)c.lineTo(s.x[i],s.y[i]);
+      if(s.x.length===1)c.lineTo(s.x[0]+.1,s.y[0]);
+      c.stroke();
+    }
+  }
+  pos(e){
+    const r=this.cv.getBoundingClientRect();
+    return [Math.round((e.clientX-r.left)/r.width*PADPX), Math.round((e.clientY-r.top)/r.height*PADPX)];
+  }
+  bind(){
+    let drawing=false;
+    const down=e=>{if(this.locked)return;e.preventDefault();drawing=true;const[x,y]=this.pos(e);
+      this.strokes.push({x:[x],y:[y]});this.redraw();this.cv.setPointerCapture(e.pointerId)};
+    const move=e=>{if(!drawing)return;e.preventDefault();const[x,y]=this.pos(e);
+      const s=this.strokes[this.strokes.length-1];s.x.push(x);s.y.push(y);this.redraw()};
+    const up=()=>{if(!drawing)return;drawing=false;this.schedule()};
+    this.cv.addEventListener('pointerdown',down);
+    this.cv.addEventListener('pointermove',move);
+    this.cv.addEventListener('pointerup',up);
+    this.cv.addEventListener('pointercancel',up);
+    this.cv.addEventListener('pointerleave',up);
+  }
+  schedule(){clearTimeout(this.timer);this.timer=setTimeout(()=>this.recognize(),650)}
+  clear(){this.strokes=[];this.value='';this.pick.textContent='';this.pick.classList.add('empty');
+    this.cands.innerHTML='';this.redraw()}
+  undo(){this.strokes.pop();this.redraw();if(this.strokes.length)this.schedule();else this.cands.innerHTML=''}
+  setValue(v){this.value=v;this.pick.textContent=v;this.pick.classList.toggle('empty',!v)}
+  async recognize(){
+    if(!this.strokes.length){this.cands.innerHTML='';return}
+    this.cands.innerHTML='<span class="busy">辨識中…</span>';
+    let list=[];
+    try{ list=await hwRecognize(this.strokes) }
+    catch(err){ this.cands.innerHTML='<span class="busy">無法連線辨識，請用鍵盤</span>'; return }
+    if(!list.length){this.cands.innerHTML='<span class="busy">認不出來，再寫清楚些</span>';return}
+    this.cands.innerHTML='';
+    list.slice(0,8).forEach((ch,i)=>{
+      const b=document.createElement('button');b.textContent=ch;
+      b.onclick=()=>{[...this.cands.children].forEach(x=>x.classList.remove('on'));
+        b.classList.add('on');this.setValue(ch)};
+      this.cands.appendChild(b);
+      if(i===0){b.classList.add('on');this.setValue(ch)}   // 預設選第一候選
+    });
+  }
+}
+async function hwRecognize(strokes){
+  const body={options:'enable_pre_space',requests:[{
+    writing_guide:{writing_area_width:PADPX,writing_area_height:PADPX},
+    ink:strokes.map(s=>[s.x,s.y]),language:'zh_TW'}]};
+  const r=await fetch('https://inputtools.google.com/request?itc=zh-t-i0-handwrit&app=demopage',
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json();
+  if(j[0]!=='SUCCESS')return [];
+  return (j[1][0][1]||[]).filter(s=>s.length===1&&/[㐀-鿿]/.test(s));
+}
+// 建立 n 個手寫格 + 工具列，回傳控制物件
+function makePads(hostSel,toolSel,n){
+  const host=$(hostSel),tools=$(toolSel);
+  const pads=Array.from({length:n},()=>new Pad(host));
+  const mk=(txt,fn)=>{const b=document.createElement('button');b.textContent=txt;b.onclick=fn;tools.appendChild(b);return b};
+  mk('清除全部',()=>pads.forEach(p=>p.clear()));
+  mk('復原上一筆',()=>{for(let i=pads.length-1;i>=0;i--)if(pads[i].strokes.length){pads[i].undo();break}});
+  mk('重新辨識',()=>pads.forEach(p=>p.strokes.length&&p.recognize()));
+  return {
+    pads,
+    text(){return pads.map(p=>p.value).join('')},
+    clear(){pads.forEach(p=>p.clear())},
+    lock(v){pads.forEach(p=>{p.locked=v;p.cv.style.opacity=v?.55:1})}
+  };
+}
+
+/* ===================== 1. 去無成字 ===================== */
+// parts: 四個部件；drop: 該去掉的；ans: 答案
+const QW=[
+ {p:['豸','刀','口','貝'],d:'貝',a:'貂'},
+ {p:['广','廿','又','士'],d:'士',a:'度'},
+ {p:['月','艮','辶','犬'],d:'犬',a:'腿'},
+ {p:['隹','田','臼','力'],d:'隹',a:'舅'},
+ {p:['尸','示','口','寸'],d:'口',a:'尉'},
+ {p:['木','目','心','日'],d:'日',a:'想'},
+ {p:['立','日','心','口'],d:'口',a:'意'},
+ {p:['矢','口','日','宀'],d:'宀',a:'智'},
+ {p:['日','刀','口','灬'],d:'灬',a:'昭'},
+ {p:['艹','隹','灬','木'],d:'木',a:'蕉'},
+ {p:['彳','圭','亍','氵'],d:'氵',a:'街'},
+ {p:['言','身','寸','口'],d:'口',a:'謝'},
+ {p:['言','辶','米','口'],d:'口',a:'謎'},
+ {p:['氵','品','木','火'],d:'火',a:'澡'},
+ {p:['艹','日','大','扌'],d:'扌',a:'莫'},
+ {p:['豸','艹','田','灬'],d:'灬',a:'貓'},
+ {p:['亠','口','小','木'],d:'木',a:'京'},
+ {p:['宀','夂','口','木'],d:'木',a:'客'},
+ {p:['艹','人','木','氵'],d:'氵',a:'茶'},
+ {p:['亻','立','口','日'],d:'日',a:'倍'},
+ {p:['氵','古','月','口'],d:'口',a:'湖'},
+ {p:['艹','氵','各','木'],d:'木',a:'落'},
+ {p:['艹','玄','田','木'],d:'木',a:'蓄'},
+ {p:['艹','丞','灬','木'],d:'木',a:'蒸'},
+ {p:['艹','氵','昜','木'],d:'木',a:'蕩'},
+ {p:['广','良','阝','木'],d:'木',a:'廊'},
+ {p:['氵','共','巳','口'],d:'口',a:'港'},
+ {p:['亻','攵','心','口'],d:'口',a:'悠'},
+ {p:['禾','火','心','木'],d:'木',a:'愁'},
+ {p:['女','口','心','日'],d:'日',a:'恕'},
+ {p:['女','又','心','口'],d:'口',a:'怒'},
+ {p:['艹','去','皿','木'],d:'木',a:'蓋'},
+ {p:['竹','戶','冊','木'],d:'木',a:'篇'},
+ {p:['竹','目','廾','日'],d:'日',a:'算'},
+ {p:['竹','門','日','口'],d:'口',a:'簡'},
+ {p:['竹','土','寸','日'],d:'日',a:'等'},
+ {p:['氵','皮','女','木'],d:'木',a:'婆'},
+ {p:['耳','又','女','口'],d:'口',a:'娶'},
+ {p:['臣','又','貝','口'],d:'口',a:'賢'},
+ {p:['舟','殳','皿','口'],d:'口',a:'盤'},
+ {p:['言','土','寸','日'],d:'日',a:'詩'},
+ {p:['言','五','口','日'],d:'日',a:'語'},
+ {p:['金','夕','口','木'],d:'木',a:'銘'},
+ {p:['金','艹','日','口'],d:'口',a:'錯'},
+ {p:['金','立','見','口'],d:'口',a:'鏡'},
+ {p:['立','彡','頁','口'],d:'口',a:'顏'},
+ {p:['日','疋','頁','口'],d:'口',a:'題'},
+];
+let qwPool=[],qwCur=null,qwLive=false;
+const pad1=makePads('#pads1','#tools1',1);
+const t1=mkTimer($('#t1'),30,null,()=>{if(qwLive){qwLive=false;show1(false,'時間到！答案是「'+qwCur.a+'」（去掉「'+qwCur.d+'」）')}});
+function draw1(q){
+  const st=$('#qwStage');
+  st.innerHTML='<div class="lab">請去除一個部件，排列組合寫出一字</div>';
+  const slots=[[18,18],[55,12],[14,52],[52,50]];
+  shuffle(q.p).forEach((ch,i)=>{
+    const d=document.createElement('div'); d.className='part'; d.textContent=ch;
+    const [l,t]=slots[i];
+    d.style.left=(l+Math.random()*10)+'%'; d.style.top=(t+Math.random()*8)+'%';
+    d.style.transform='rotate('+(Math.random()*160-80).toFixed(0)+'deg)';
+    st.appendChild(d);
+  });
+}
+function next1(){
+  if(!qwPool.length)qwPool=shuffle(QW);
+  qwCur=qwPool.pop(); draw1(qwCur); qwLive=true;
+  pad1.clear();pad1.lock(false);
+  $('#in1').disabled=false;$('#ok1').disabled=false;$('#give1').disabled=false;
+  $('#in1').value='';$('#m1').textContent='';$('#m1').className='msg';
+  t1.start();
+}
+function show1(good,txt){
+  t1.stop();qwLive=false;pad1.lock(true);
+  $('#in1').disabled=true;$('#ok1').disabled=true;$('#give1').disabled=true;
+  $('#m1').innerHTML=txt+strokeBtn(qwCur.a); $('#m1').className='msg '+(good?'ok':'no');
+  $('#n1').textContent=+$('#n1').textContent+1;
+  if(good)$('#sc1').textContent=+$('#sc1').textContent+1;
+  $('#go1').textContent='下一題';
+}
+$('#go1').onclick=next1;
+$('#ok1').onclick=()=>{ if(!qwLive)return;
+  const v=(pad1.text()||$('#in1').value).trim();
+  if(!v){$('#m1').className='msg no';$('#m1').textContent='請先在手寫格寫字，再從候選字中選一個';return}
+  if(v===qwCur.a)show1(true,'✔ 正確！'+qwCur.a+'　＝ '+qwCur.p.filter(x=>x!==qwCur.d).join(' ＋ ')+'（去掉「'+qwCur.d+'」）');
+  else show1(false,'✘ 錯誤。答案是「'+qwCur.a+'」＝ '+qwCur.p.filter(x=>x!==qwCur.d).join(' ＋ ')+'（去掉「'+qwCur.d+'」）');
+};
+$('#give1').onclick=()=>show1(false,'答案是「'+qwCur.a+'」＝ '+qwCur.p.filter(x=>x!==qwCur.d).join(' ＋ ')+'（去掉「'+qwCur.d+'」）');
+$('#in1').addEventListener('keydown',e=>{if(e.key==='Enter')$('#ok1').click()});
+
+/* ===================== 2. 四說新語 ===================== */
+// q: 四句成語；each idx: 該句被取用的字位置(0-3)；a: 答案
+const SS=[
+ {q:['不動聲色','平白無故','安分守己','一日三秋'],i:[3,0,1,3],a:'平分秋色'},
+ {q:['敬陪末座','滿面春風','酒肉朋友','德高望重'],i:[3,0,2,1],a:'高朋滿座'},
+ {q:['大呼小叫','舉案齊眉','一拍即合','空前絕後'],i:[3,1,1,2],a:'拍案叫絕'},
+ {q:['飢不擇食','乏善可陳','根深蒂固','執迷不悟'],i:[2,1,3,0],a:'擇善固執'},
+ {q:['千鈞一髮','想方設法','殺一儆百','詭計多端'],i:[0,1,3,1],a:'千方百計'},
+ {q:['三心二意','花好月圓','喜怒哀樂','大鳴大放'],i:[1,0,1,3],a:'心花怒放'},
+ {q:['半信半疑','窮途末路','不約而同','廢寢忘食'],i:[0,1,2,0],a:'半途而廢'},
+ {q:['莫名其妙','舉一反三','憤世嫉俗','充耳不聞'],i:[1,0,1,3],a:'舉世聞名'},
+ {q:['膽大心細','電光石火','正襟危坐','黑白分明'],i:[1,1,0,3],a:'光明正大'},
+ {q:['一帆風順','心平氣和','驚濤駭浪','夜深人靜'],i:[2,1,3,3],a:'風平浪靜'},
+ {q:['坐井觀天','恍然大悟','有備無患','循序漸進'],i:[1,1,0,1],a:'井然有序'},
+ {q:['地廣人稀','多此一舉','似曾相識','一見如故'],i:[1,0,3,1],a:'見多識廣'},
+ {q:['深入淺出','不假思索','熟能生巧','處心積慮'],i:[0,2,0,3],a:'深思熟慮'},
+ {q:['低聲下氣','妙手回春','好高騖遠','大開眼界'],i:[0,1,1,2],a:'眼高手低'},
+ {q:['飲水思源','不落俗套','安如磐石','足不出戶'],i:[1,1,3,2],a:'水落石出'},
+ {q:['息息相關','錦上添花','不約而同','下筆成章'],i:[2,1,0,0],a:'不相上下'},
+ {q:['來日方長','耳目一新','花好月圓','大同小異'],i:[1,3,2,3],a:'日新月異'},
+ {q:['成竹在胸','虛懷若谷','小題大作','志同道合'],i:[3,1,2,0],a:'胸懷大志'},
+ {q:['勇往直前','因材施教','爭先恐後','果不其然'],i:[3,0,3,0],a:'前因後果'},
+ {q:['青出於藍','望梅止渴','胸有成竹','心猿意馬'],i:[0,1,3,3],a:'青梅竹馬'},
+ {q:['千鈞一髮','輕而易舉','兩全其美','得寸進尺'],i:[2,3,0,0],a:'一舉兩得'},
+ {q:['皆大歡喜','不同凡響','小題大作','標新立異'],i:[1,1,0,3],a:'大同小異'},
+ {q:['賞心悅目','安居樂業','據理力爭','情非得已'],i:[1,0,1,2],a:'心安理得'},
+ {q:['得天獨厚','語重心長','腳踏實地','久別重逢'],i:[1,3,3,0],a:'天長地久'},
+ {q:['萬無一失','不平則鳴','驚弓之鳥','先發制人'],i:[2,3,0,3],a:'一鳴驚人'},
+ {q:['出類拔萃','聚精會神','格格不入','化險為夷'],i:[0,3,3,0],a:'出神入化'},
+ {q:['一波三折','言簡意賅','兩袖清風','妙語如珠'],i:[2,0,0,1],a:'三言兩語'},
+ {q:['有氣無力','讚不絕口','從長計議','三心二意'],i:[3,1,0,1],a:'力不從心'},
+ {q:['獨當一面','賞心悅目','十全十美','非同小可'],i:[3,3,1,0],a:'面目全非'},
+ {q:['傾家蕩產','不言而喻','門當戶對','曉以大義'],i:[1,3,2,0],a:'家喻戶曉'},
+ {q:['冰天雪地','百發百中','送舊迎新','塗炭生靈'],i:[2,3,0,1],a:'雪中送炭'},
+ {q:['各有千秋','行雲流水','莫名其妙','實事求是'],i:[0,0,2,3],a:'各行其是'},
+];
+let ssPool=[],ssCur=null,ssLive=false,ssHinted=false;
+const pad2=makePads('#pads2','#tools2',4);
+const t2=mkTimer($('#t2'),40,l=>{if(l===20&&ssLive)hint2()},()=>{if(ssLive)show2(0,'時間到！答案是「'+ssCur.a+'」')});
+function paint2(markAll){
+  const box=$('#ids2');box.innerHTML='';
+  ssCur.q.forEach((s,r)=>{
+    const d=document.createElement('div');d.className='idiom';
+    [...s].forEach((c,k)=>{
+      const sp=document.createElement('span');sp.textContent=c;
+      if(markAll&&k===ssCur.i[r])sp.classList.add('mark');
+      d.appendChild(sp);
+    });
+    box.appendChild(d);
+  });
+}
+function next2(){
+  if(!ssPool.length)ssPool=shuffle(SS);
+  const raw=ssPool.pop();
+  // 四句成語（連同取用字位置）隨機洗牌 —— 節目真題的四句順序與答案字序不一致
+  const rows=shuffle(raw.q.map((w,r)=>({w,k:raw.i[r]})));
+  ssCur={q:rows.map(o=>o.w),i:rows.map(o=>o.k),a:raw.a};
+  ssLive=true;ssHinted=false;paint2(false);
+  pad2.clear();pad2.lock(false);
+  $('#in2').disabled=false;$('#ok2').disabled=false;$('#give2').disabled=false;
+  $('#in2').value='';$('#m2').textContent='';$('#m2').className='msg';
+  t2.start();
+}
+function hint2(){
+  ssHinted=true;
+  const k=Math.random()*4|0;
+  $('#m2').className='msg tip';
+  $('#m2').textContent='💡 提示：答案第 '+(k+1)+' 個字是「'+ssCur.a[k]+'」（此後答對只得 1 分）';
+}
+function show2(pt,txt){
+  t2.stop();ssLive=false;paint2(true);pad2.lock(true);
+  $('#in2').disabled=true;$('#ok2').disabled=true;$('#give2').disabled=true;
+  $('#m2').innerHTML=txt+strokeBtn(ssCur.a);$('#m2').className='msg '+(pt>0?'ok':'no');
+  $('#n2').textContent=+$('#n2').textContent+1;
+  $('#sc2').textContent=+$('#sc2').textContent+pt;
+  $('#go2').textContent='下一題';
+}
+$('#go2').onclick=next2;
+$('#ok2').onclick=()=>{ if(!ssLive)return;
+  const v=(pad2.text()||$('#in2').value).trim();
+  if(v.length!==4){$('#m2').className='msg no';$('#m2').textContent='四格都要寫，並各選一個候選字（目前寫出「'+v+'」）';return}
+  if(v===ssCur.a)show2(ssHinted?1:2,'✔ 正確！「'+ssCur.a+'」　得 '+(ssHinted?1:2)+' 分');
+  else show2(0,'✘ 錯誤。答案是「'+ssCur.a+'」');
+};
+$('#give2').onclick=()=>show2(0,'答案是「'+ssCur.a+'」');
+$('#in2').addEventListener('keydown',e=>{if(e.key==='Enter')$('#ok2').click()});
+
+/* ===================== 3. 成雙成對 ===================== */
+const PAIRS=[
+ { name:'題組 A（節目實錄）',
+   grid:['今','豆','心','矢','丁','分','口','貝','台','疒','支','言','山','扌','風','隹'],
+   ans:'打 扣 抬 扮 技 推 知 短 叮 吩 吟 含 吱 唯 唄 售 誰 諷 訂 貧 忿 念 怠 貽 怡 忮 疔 瘋 痘 嵐 岐 岑'.split(' ')},
+ { name:'題組 B（規則書所附）',
+   grid:['馬','白','木','王','良','宀','子','果','也','冊','米','土','且','反','叉','女'],
+   ans:'媽 瑪 馳 柏 枉 李 棵 柵 板 宋 好 娘 她 姍 姐 珀 琅 籽 粿 粗 地 字 宜 皈 坂 杈'.split(' ')},
+ { name:'題組 C（自製）',
+   grid:['氵','木','日','月','士','門','女','馬','工','各','青','立','中','土','子','化'],
+   ans:'江 汁 洛 清 沐 河 湖 汪 桂 柱 格 材 村 明 晴 時 朋 期 閒 問 間 閨 媽 姓 好 妹 花 化 貨 站 童 仲 忠 沖 址 圳 存 李 們 閃'.split(' ')},
+ { name:'題組 D（自製）',
+   grid:['亻','氵','忄','女','巴','也','木','白','生','青','相','兆','山','田','犬','皮'],
+   ans:'伯 休 仙 佃 他 倩 池 沐 泊 清 湘 汕 波 汝 情 怕 性 她 姓 婆 姚 柏 桃'.split(' ')},
+];
+let pcur=null,pFound=[],pLive=false;
+const pad3=makePads('#pads3','#tools3',1);
+const t3=mkTimer($('#t3'),30,null,()=>{if(pLive)end3('時間到！')});
+function next3(){
+  pcur=PAIRS[(Math.random()*PAIRS.length)|0];pFound=[];pLive=true;
+  const g=$('#pairGrid');g.innerHTML='';
+  pcur.grid.forEach(c=>{const d=document.createElement('div');d.textContent=c;g.appendChild(d)});
+  $('#sc3').textContent=0;$('#left3').textContent=pcur.ans.length;
+  $('#pairFound').innerHTML='';$('#m3').textContent=pcur.name;$('#m3').className='msg tip';
+  pad3.clear();pad3.lock(false);
+  $('#in3').disabled=false;$('#ok3').disabled=false;$('#give3').disabled=false;
+  $('#in3').value='';
+  t3.start();
+}
+function paintFound(showAll){
+  const b=$('#pairFound');b.innerHTML='';
+  const list=showAll?pcur.ans:pFound;
+  list.forEach(c=>{const s=document.createElement('span');s.textContent=c;
+    if(showAll&&!pFound.includes(c))s.className='miss';b.appendChild(s)});
+}
+function end3(msg){
+  t3.stop();pLive=false;pad3.lock(true);
+  $('#in3').disabled=true;$('#ok3').disabled=true;$('#give3').disabled=true;
+  paintFound(true);
+  $('#m3').className='msg tip';
+  $('#m3').textContent=msg+'　你寫出 '+pFound.length+' / '+pcur.ans.length+' 個（灰色為未寫出）';
+  $('#go3').textContent='換一題';
+}
+$('#go3').onclick=next3;
+$('#ok3').onclick=()=>{ if(!pLive)return;
+  const v=(pad3.text()||$('#in3').value).trim();
+  $('#in3').value='';setTimeout(()=>pad3.clear(),150);   // 送出後自動清格，方便連續作答
+  if(!v){$('#m3').className='msg no';$('#m3').textContent='請先在手寫格寫字，再選候選字';return}
+  if(pFound.includes(v)){$('#m3').className='msg no';$('#m3').textContent='「'+v+'」已經寫過了';return}
+  if(pcur.ans.includes(v)){
+    pFound.push(v);paintFound(false);
+    $('#sc3').textContent=pFound.length;$('#left3').textContent=pcur.ans.length-pFound.length;
+    $('#m3').className='msg ok';$('#m3').textContent='✔ 「'+v+'」正確！';
+    if(pFound.length===pcur.ans.length)end3('全部答對！');
+  }else{
+    $('#m3').className='msg no';
+    $('#m3').textContent='✘ 「'+v+'」不在本題題庫中（現場由「字庫智庫」老師依教育部辭典判定）';
+  }
+};
+$('#give3').onclick=()=>end3('已公布答案。');
+$('#in3').addEventListener('keydown',e=>{if(e.key==='Enter')$('#ok3').click()});
+
+/* ===================== 4. 隻字片語 ===================== */
+const IDIOMS=`一石二鳥 一舉兩得 一心一意 一目了然 一帆風順 一鳴驚人 一絲不苟 一氣呵成 一針見血 一視同仁
+一敗塗地 一刀兩斷 一事無成 一日三秋 一觸即發 一箭雙鵰 一勞永逸 一諾千金 一塵不染 一望無際 一乾二淨
+一意孤行 一言九鼎 一見如故 一如既往 一本正經 一波三折 一脈相承 一拍即合 一帆順風 一絲不掛
+七上八下 九牛一毛 十全十美 三心二意 三顧茅廬 三思而行 四面楚歌 五花八門 六神無主 七零八落 八面玲瓏
+九死一生 十萬火急 千方百計 千鈞一髮 千變萬化 千辛萬苦 千載難逢 萬無一失 萬紫千紅 萬眾一心 百發百中
+百折不撓 百年好合 三生有幸 三言兩語 四通八達 五湖四海
+不動聲色 不約而同 不知所措 不相上下 不屈不撓 不勝枚舉 不遺餘力 不可思議 不翼而飛 不分軒輊 不寒而慄
+不速之客 不同凡響 不言而喻 不謀而合 不落俗套 不務正業 不堪回首 不由自主
+平白無故 平分秋色 平易近人 平步青雲 安分守己 安居樂業 安然無恙 安之若素
+心花怒放 心不在焉 心曠神怡 心平氣和 心安理得 心照不宣 心有餘悸 心心相印 心口如一 心灰意冷
+天衣無縫 天長地久 天崩地裂 天真爛漫 天翻地覆 天南地北 天羅地網 天經地義 天下無雙 天涯海角
+無中生有 無微不至 無理取鬧 無精打采 無獨有偶 無可奈何 無地自容 無所不在 無憂無慮
+成事不足 成群結隊 成千上萬 成人之美 成家立業
+門當戶對 門可羅雀 門庭若市
+雙喜臨門 臨門一腳 臨危不亂 臨陣磨槍 臨渴掘井
+喜從天降 喜出望外 喜怒哀樂 喜氣洋洋
+足不出戶 足智多謀 缺一不可 衣食無缺 寬衣解帶 衣冠楚楚
+高朋滿座 高瞻遠矚 高談闊論 高枕無憂 滿載而歸 滿城風雨 滿面春風
+拍案叫絕 大呼小叫 舉案齊眉 空前絕後 絕處逢生 絕無僅有 敬陪末座 酒肉朋友 德高望重
+飢不擇食 乏善可陳 根深蒂固 執迷不悟 擇善固執
+大同小異 大公無私 大器晚成 大驚小怪 大材小用 大快人心 大顯身手 大義滅親 大失所望
+光明正大 正襟危坐 明察秋毫 明知故犯 明目張膽 光明磊落 明爭暗鬥
+風平浪靜 風和日麗 風起雲湧 風吹草動 風馳電掣 風雨無阻 風調雨順 風聲鶴唳
+坐井觀天 恍然大悟 有備無患 循序漸進 井然有序 井底之蛙 有目共睹 有口難言
+見多識廣 廣結善緣 多此一舉 似曾相識 見義勇為 見異思遷 見機行事 多才多藝
+深思熟慮 深入淺出 不假思索 熟能生巧 處心積慮 深謀遠慮 深不可測
+眼高手低 低聲下氣 手足無措 眼明手快 妙手回春 眼花撩亂 手忙腳亂 手到擒來
+水到渠成 水落石出 水漲船高 水洩不通 水深火熱 水乳交融
+人山人海 人才輩出 人云亦云 人定勝天 人之常情 人聲鼎沸 人心惶惶
+日新月異 日理萬機 日積月累 日以繼夜 月下老人 明月清風
+生龍活虎 生生不息 生氣勃勃 生離死別 生死與共
+如魚得水 如虎添翼 如日中天 如願以償 如坐針氈 如影隨形 如火如荼
+口若懸河 口是心非 口耳相傳 目不轉睛 目瞪口呆 目中無人 目不暇給
+畫龍點睛 畫蛇添足 守株待兔 亡羊補牢 狐假虎威 自相矛盾 掩耳盜鈴 對牛彈琴 對症下藥
+杯弓蛇影 塞翁失馬 破釜沉舟 臥薪嘗膽 望梅止渴 濫竽充數 鶴立雞群 名列前茅
+舉一反三 世外桃源 充耳不聞 舉世聞名 名正言順 名副其實 名不虛傳 名落孫山
+奮不顧身 全力以赴 精益求精 再接再厲 持之以恆 鍥而不捨 廢寢忘食 專心致志
+半信半疑 半途而廢 窮途末路 走投無路 出人意料 出類拔萃 出爾反爾 入木三分 入不敷出
+花好月圓 怒髮衝冠 放浪形骸 花枝招展 花言巧語 放虎歸山
+言之有理 言簡意賅 言行一致 行雲流水 金玉良言 金科玉律 金碧輝煌 玉石俱焚 石破天驚
+火上加油 火中取栗 車水馬龍 馬到成功 馬不停蹄 龍飛鳳舞 龍潭虎穴 龍爭虎鬥 虎頭蛇尾 虎視眈眈
+鳥語花香 魚目混珠 魚貫而入 海闊天空 海底撈針 山明水秀 山窮水盡 山盟海誓
+古色古香 古往今來 今非昔比 來日方長 來龍去脈 去蕪存菁 上行下效 上下其手 下筆成章
+左右為難 左顧右盼 前所未有 前功盡棄 前因後果 後顧之憂 後來居上 內憂外患 外強中乾 中流砥柱
+東山再起 東施效顰 南轅北轍 春暖花開 秋高氣爽 青出於藍 青梅竹馬 白手起家 白紙黑字 黑白分明
+胸有成竹 胸懷大志 腳踏實地 頭頭是道 頭破血流 面面俱到 面紅耳赤 耳目一新 耳濡目染 唇亡齒寒
+舌燦蓮花 肝腸寸斷 血氣方剛 骨瘦如柴 毛骨悚然 感激涕零 恰到好處 理所當然 順其自然 相輔相成
+各有千秋 各行其是 同心協力 同甘共苦 反覆無常 反客為主 據理力爭 得心應手 得寸進尺
+語重心長 語無倫次 談笑風生 談何容易 察言觀色 意氣風發 意猶未盡 興高采烈 興致勃勃
+殺一儆百 詭計多端 喜怒哀樂 大鳴大放 莫名其妙 憤世嫉俗 膽大心細 電光石火 地廣人稀 一見如故
+好高騖遠 大開眼界 飲水思源 安如磐石 息息相關 錦上添花 虛懷若谷 小題大作 志同道合 勇往直前
+因材施教 爭先恐後 果不其然 望梅止渴 心猿意馬 輕而易舉 兩全其美 得寸進尺 皆大歡喜 標新立異
+賞心悅目 情非得已 得天獨厚 久別重逢 萬無一失 不平則鳴 驚弓之鳥 先發制人 聚精會神 格格不入
+化險為夷 言簡意賅 兩袖清風 妙語如珠 有氣無力 讚不絕口 從長計議 獨當一面 十全十美 非同小可
+傾家蕩產 不言而喻 曉以大義 冰天雪地 送舊迎新 塗炭生靈 各有千秋 實事求是 落落大方 出人頭地
+才高八斗 新仇舊恨 異想天開 懷才不遇 梅開二度 竹籃打水 一舉兩得 大同小異 心安理得 天長地久
+一鳴驚人 出神入化 三言兩語 力不從心 面目全非 家喻戶曉 雪中送炭 各行其是 不相上下 光明正大
+見多識廣 眼高手低 水落石出 日新月異 胸懷大志 前因後果 青梅竹馬 舉世聞名 半途而廢 心花怒放
+千方百計 深思熟慮 井然有序 風平浪靜 千鈞一髮`
+.split(/\s+/).filter(s=>s.length===4);
+const IDSET=new Set(IDIOMS);
+
+const W=12,H=8,COLS='ABCDEFGHIJKL';
+let bd,used,selR,selC,dir='R',myN,aiN,g4Live,sosUsed;
+const pad4=makePads('#pads4','#tools4',4);
+const t4=mkTimer($('#t4'),60,null,()=>{ if(g4Live){ g4Live=false; endGame('⏰ 時間到，你沒能寫出成語 —— 電腦獲勝。') } });
+
+function buildBoard(){
+  const w=$('#boardWrap');
+  let h='<table id="board"><tr><th></th>';
+  for(let c=0;c<W;c++)h+='<th>'+COLS[c]+'</th>';h+='</tr>';
+  for(let r=0;r<H;r++){h+='<tr><th>'+(r+1)+'</th>';
+    for(let c=0;c<W;c++)h+='<td data-r="'+r+'" data-c="'+c+'"></td>';h+='</tr>'}
+  h+='</table>';w.innerHTML=h;
+  $$('#board td').forEach(td=>td.onclick=()=>{
+    if(!g4Live)return;
+    $$('#board td').forEach(x=>x.classList.remove('sel'));
+    td.classList.add('sel');selR=+td.dataset.r;selC=+td.dataset.c;
+    $('#sel4').textContent='起筆格：'+COLS[selC]+(selR+1);
+  });
+}
+function paintCell(r,c,ch,who){
+  const td=document.querySelector('#board td[data-r="'+r+'"][data-c="'+c+'"]');
+  td.textContent=ch; if(who)td.classList.add(who);
+}
+const DIRV={R:[0,1],L:[0,-1],D:[1,0],U:[-1,0]};
+// 檢查一句成語放在 (r,c) 往 dir 是否合法。first=是否為開局
+function checkPlace(word,r,c,d,first){
+  const [dr,dc]=DIRV[d];let overlap=0;
+  for(let k=0;k<4;k++){
+    const rr=r+dr*k, cc=c+dc*k;
+    if(rr<0||rr>=H||cc<0||cc>=W)return {ok:false,why:'超出盤面範圍'};
+    const cur=bd[rr][cc];
+    if(cur){ if(cur!==word[k])return {ok:false,why:'第 '+(k+1)+' 格已有「'+cur+'」，與你寫的「'+word[k]+'」衝突'}; overlap++; }
+  }
+  if(overlap===4)return {ok:false,why:'這句成語已經完整在盤上了'};
+  if(!first&&overlap===0)return {ok:false,why:'必須與盤面上已有的字交會共用至少一個字'};
+  return {ok:true};
+}
+function place(word,r,c,d,who){
+  const [dr,dc]=DIRV[d];
+  for(let k=0;k<4;k++){const rr=r+dr*k,cc=c+dc*k;
+    if(!bd[rr][cc]){bd[rr][cc]=word[k];paintCell(rr,cc,word[k],who)}}
+  used.add(word);
+}
+// 找出所有合法落點（給電腦與求救用）
+function allMoves(limit){
+  const out=[];
+  const onBoard=new Set();
+  for(let r=0;r<H;r++)for(let c=0;c<W;c++)if(bd[r][c])onBoard.add(bd[r][c]);
+  for(const w of IDIOMS){
+    if(used.has(w))continue;
+    if(![...w].some(ch=>onBoard.has(ch)))continue;
+    for(const d of ['R','L','D','U'])
+      for(let r=0;r<H;r++)for(let c=0;c<W;c++){
+        if(checkPlace(w,r,c,d,false).ok){out.push({w,r,c,d});
+          if(limit&&out.length>=limit)return out}
+      }
+  }
+  return out;
+}
+function log(s){const l=$('#log');l.innerHTML+=s+'<br>';l.scrollTop=l.scrollHeight}
+function endGame(msg){
+  t4.stop();g4Live=false;pad4.lock(true);
+  $('#in4').disabled=true;$('#ok4').disabled=true;$('#sos4').disabled=true;
+  $('#m4').className='msg tip';$('#m4').textContent=msg;
+  $('#go4').textContent='再來一局';
+}
+function newGame(){
+  bd=Array.from({length:H},()=>Array(W).fill(''));
+  used=new Set();myN=0;aiN=0;sosUsed=false;selR=selC=null;g4Live=true;
+  buildBoard();$('#log').innerHTML='';$('#sc4').textContent=0;$('#sc4b').textContent=0;
+  const starters=['雙','一','天','無','風','心','水','人','大','成'];
+  const s=starters[(Math.random()*starters.length)|0];
+  bd[3][5]=s;paintCell(3,5,s,'');
+  document.querySelector('#board td[data-r="3"][data-c="5"]').style.color='var(--gold)';
+  pad4.clear();pad4.lock(false);
+  $('#in4').disabled=false;$('#ok4').disabled=false;$('#sos4').disabled=false;
+  $('#in4').value='';
+  $('#m4').className='msg';$('#m4').textContent='';
+  $('#sel4').textContent='起筆格：未選';
+  log('🎬 起始字：<b style="color:var(--gold)">'+s+'</b>（F4）　你先寫。');
+  t4.start();
+}
+$('#go4').onclick=newGame;
+$$('#dirs4 button').forEach(b=>b.onclick=()=>{
+  $$('#dirs4 button').forEach(x=>x.classList.remove('on'));b.classList.add('on');dir=b.dataset.d;
+});
+$('#sos4').onclick=()=>{
+  if(!g4Live||sosUsed)return;
+  if(t4.left()>20){$('#m4').className='msg no';$('#m4').textContent='求救要等剩 20 秒以內才能使用（現在還有 '+t4.left()+' 秒）';return}
+  sosUsed=true;$('#sos4').disabled=true;
+  const mv=allMoves(400);
+  if(!mv.length){$('#m4').className='msg tip';$('#m4').textContent='教授也想不出來了…盤面可能已無解';return}
+  const p=mv[(Math.random()*mv.length)|0];
+  $('#m4').className='msg tip';
+  $('#m4').textContent='👨‍🏫 教授提示：可寫「'+p.w+'」，起筆格 '+COLS[p.c]+(p.r+1)+'，方向 '+
+    ({R:'向右',L:'向左',D:'向下',U:'向上'})[p.d];
+};
+$('#ok4').onclick=()=>{
+  if(!g4Live)return;
+  const w=(pad4.text()||$('#in4').value).trim();
+  if(w.length!==4){$('#m4').className='msg no';$('#m4').textContent='四格都要寫，並各選一個候選字（目前寫出「'+w+'」）';return}
+  if(!IDSET.has(w)){$('#m4').className='msg no';$('#m4').textContent='「'+w+'」不在本練習系統的成語庫中（現場以教育部重編國語辭典修訂本為準）';return}
+  if(used.has(w)){$('#m4').className='msg no';$('#m4').textContent='「'+w+'」這局已經寫過了';return}
+  if(selR==null){$('#m4').className='msg no';$('#m4').textContent='請先在盤面上點選起筆格';return}
+  const chk=checkPlace(w,selR,selC,dir,false);
+  if(!chk.ok){$('#m4').className='msg no';$('#m4').textContent='✘ '+chk.why;return}
+  place(w,selR,selC,dir,'me');myN++;$('#sc4').textContent=myN;
+  log('🙋 你：<b>'+w+'</b>　'+COLS[selC]+(selR+1)+' '+({R:'→',L:'←',D:'↓',U:'↑'})[dir]);
+  $('#in4').value='';pad4.clear();selR=selC=null;$('#sel4').textContent='起筆格：未選';
+  $$('#board td').forEach(x=>x.classList.remove('sel'));
+  $('#m4').className='msg ok';$('#m4').textContent='✔ 成立！換電腦…';
+  t4.stop();
+  setTimeout(aiTurn,900);
+};
+function aiTurn(){
+  if(!g4Live)return;
+  const mv=allMoves(0);
+  if(!mv.length){endGame('🏆 電腦已經無處可寫 —— 你獲勝！');return}
+  // 策略：優先選擇「靠邊」的落點，把中央留白給自己（模擬節目中的空間戰術）
+  mv.sort((a,b)=>score(b)-score(a));
+  const top=mv.slice(0,Math.max(1,Math.min(8,mv.length|0)));
+  const p=top[(Math.random()*top.length)|0];
+  place(p.w,p.r,p.c,p.d,'ai');aiN++;$('#sc4b').textContent=aiN;
+  log('🤖 電腦：<b>'+p.w+'</b>　'+COLS[p.c]+(p.r+1)+' '+({R:'→',L:'←',D:'↓',U:'↑'})[p.d]);
+  // 檢查我方是否還有路
+  const mine=allMoves(1);
+  if(!mine.length){endGame('💀 你已經無處可寫 —— 電腦獲勝。');return}
+  $('#m4').className='msg';$('#m4').textContent='輪到你了，60 秒。';
+  $('#in4').focus();
+  t4.start();
+}
+function score(m){
+  // 越靠盤面中央扣分越多 → 電腦傾向往邊緣發展
+  const [dr,dc]=DIRV[m.d];let s=0;
+  for(let k=0;k<4;k++){
+    const rr=m.r+dr*k, cc=m.c+dc*k;
+    s+=Math.abs(rr-3.5)+Math.abs(cc-5.5)*0.6;
+  }
+  return s;
+}
+$('#in4').addEventListener('keydown',e=>{if(e.key==='Enter')$('#ok4').click()});
+buildBoard();
+
+/* ===================== 5. 筆順練習 ===================== */
+let HW=null,writers=[],outlineOn=true;
+function loadHW(){
+  if(HW)return HW;
+  HW=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/hanzi-writer@3.7.0/dist/hanzi-writer.min.js';
+    s.onload=()=>res(window.HanziWriter);
+    s.onerror=()=>{HW=null;rej(new Error('offline'))};
+    document.head.appendChild(s);
+  });
+  return HW;
+}
+// 從答題結果列產生「看筆順」按鈕
+function strokeBtn(word){
+  return ' <button class="ghost" style="background:transparent;border:1px solid var(--gold);color:var(--gold);'+
+    'padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px" '+
+    'onclick="gotoStroke(\''+word+'\')">✍ 看「'+word+'」的筆順</button>';
+}
+window.gotoStroke=function(word){
+  $$('nav button').forEach(x=>x.classList.remove('on'));
+  document.querySelector('nav button[data-t="s5"]').classList.add('on');
+  $$('section').forEach(x=>x.classList.remove('on'));$('#s5').classList.add('on');
+  $('#hwIn').value=word;hwLoad();
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+async function hwLoad(){
+  const word=[...$('#hwIn').value.trim()].filter(c=>/[㐀-鿿]/.test(c)).slice(0,4);
+  const area=$('#hwArea');writers=[];
+  if(!word.length){area.innerHTML='<span style="color:#a8956a;font-size:14px">請先輸入國字</span>';return}
+  area.innerHTML='<span style="color:#a8956a;font-size:14px">載入中…</span>';
+  $('#m5').textContent='';$('#m5').className='msg';
+  let W;
+  try{ W=await loadHW() }
+  catch(e){
+    area.innerHTML='<span style="color:#b8342c;font-size:14px">無法載入筆順資料庫（需要連網）。'+
+      '請改用下方教育部官方筆順學習網。</span>';return;
+  }
+  area.innerHTML='';
+  word.forEach(ch=>{
+    const box=document.createElement('div');box.id='hw_'+ch.charCodeAt(0);area.appendChild(box);
+    const w=W.create(box,ch,{
+      width:160,height:160,padding:6,
+      showOutline:outlineOn,showCharacter:false,
+      strokeAnimationSpeed:1,delayBetweenStrokes:220,
+      strokeColor:'#14304d',outlineColor:'#ddd2b0',
+      radicalColor:'#b8342c',drawingColor:'#1e5b3a',drawingWidth:14,
+      charDataLoader:(c,onLoad,onErr)=>{
+        fetch('https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/'+encodeURIComponent(c)+'.json')
+          .then(r=>{if(!r.ok)throw 0;return r.json()}).then(onLoad)
+          .catch(()=>{onErr&&onErr();box.innerHTML='<div style="color:#b8342c;font-size:13px;'+
+            'width:160px;text-align:center">「'+c+'」<br>資料庫無此字<br>請用教育部網站查</div>'});
+      }
+    });
+    writers.push({ch,w});
+  });
+  $('#m5').className='msg tip';
+  $('#m5').textContent='紅色筆畫代表部首。按「播放筆順動畫」看示範，或按「描紅測驗」自己寫寫看。';
+  setTimeout(()=>writers.forEach((o,i)=>setTimeout(()=>o.w.animateCharacter(),i*400)),400);
+}
+$('#hwGo').onclick=hwLoad;
+$('#hwIn').addEventListener('keydown',e=>{if(e.key==='Enter')hwLoad()});
+$('#hwPlay').onclick=()=>writers.forEach((o,i)=>setTimeout(()=>o.w.animateCharacter(),i*400));
+$('#hwOutline').onclick=()=>{outlineOn=!outlineOn;
+  writers.forEach(o=>outlineOn?o.w.showOutline():o.w.hideOutline())};
+$('#hwQuiz').onclick=()=>{
+  if(!writers.length)return;
+  let done=0;
+  $('#m5').className='msg tip';
+  $('#m5').textContent='✍ 描紅測驗開始：照筆順一筆一筆描。順序錯會被擋下，錯三次會示範給你看。';
+  writers.forEach(o=>{
+    o.w.quiz({
+      showHintAfterMisses:3,
+      onMistake:s=>{$('#m5').className='msg no';
+        $('#m5').textContent='✘ 「'+o.ch+'」第 '+(s.strokeNum+1)+' 筆順序或位置不對（已錯 '+s.mistakesOnStroke+' 次）'},
+      onCorrectStroke:s=>{$('#m5').className='msg ok';
+        $('#m5').textContent='✔ 「'+o.ch+'」第 '+(s.strokeNum+1)+' 筆正確，還剩 '+s.strokesRemaining+' 筆'},
+      onComplete:s=>{done++;$('#m5').className='msg ok';
+        $('#m5').textContent='🎉 「'+o.ch+'」完成！總共錯 '+s.totalMistakes+' 次'+
+          (done===writers.length?'　—— 全部寫完了':'')}
+    });
+  });
+};
+</script>
+</body>
+</html>
