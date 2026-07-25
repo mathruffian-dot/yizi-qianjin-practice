@@ -25,7 +25,12 @@ main{max-width:980px;margin:0 auto;padding:0 14px}
 section{display:none}
 section.on{display:block}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
-.bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px;
+  position:sticky;top:0;z-index:6;background:var(--panel);padding:8px 0;
+  box-shadow:0 6px 10px -8px #000}
+/* 送出列釘在畫面底部，手寫格放大後仍隨手可按 */
+.actbar{position:sticky;bottom:0;z-index:6;text-align:center;padding:10px 0 8px;
+  background:linear-gradient(to bottom,rgba(22,40,61,0),var(--panel) 30%)}
 .timer{font-size:34px;font-weight:bold;color:var(--gold2);min-width:90px;text-align:center;
   font-variant-numeric:tabular-nums}
 .timer.warn{color:#ff9b4a}
@@ -85,21 +90,37 @@ table.info{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:10px}
 table.info td{border-bottom:1px solid var(--line);padding:6px 4px;color:#c6d8ea}
 table.info td:first-child{color:var(--gold2);white-space:nowrap;width:90px}
 
-/* 手寫板 */
-.padwrap{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:12px 0 6px}
-.pad canvas{width:150px;height:150px;background:#fffdf5;border:2px solid #cfc39c;border-radius:8px;
-  touch-action:none;display:block;cursor:crosshair}
-.pad .picked{height:32px;line-height:32px;text-align:center;font-size:24px;color:var(--gold);
+/* 手寫板 —— 尺寸由 --padscale 控制，可用畫面上的「格子 ＋／－」調整 */
+:root{--padscale:1}
+.padwrap{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:12px 0 6px;
+  user-select:none;-webkit-user-select:none}
+/* 單格單元（去無成字、成雙成對）：一格獨佔，盡量大 */
+#pads1,#pads3{--pad:calc(min(82vw,380px) * var(--padscale))}
+#pads1 .pad,#pads3 .pad{width:var(--pad)}
+/* 四格單元（四說新語、隻字片語）：固定 2 欄（寬螢幕 4 欄），格子寬度隨容器縮放，
+   手機也不會被擠成一欄 */
+#pads2,#pads4{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;
+  max-width:calc(230px * var(--padscale) * 2 + 12px);margin-left:auto;margin-right:auto}
+@media(min-width:1000px){
+  #pads2,#pads4{grid-template-columns:repeat(4,1fr);
+    max-width:calc(215px * var(--padscale) * 4 + 36px)}
+}
+.pad canvas{width:100%;aspect-ratio:1/1;height:auto;background:#fffdf5;border:2px solid #cfc39c;
+  border-radius:10px;touch-action:none;display:block;cursor:crosshair;
+  -webkit-tap-highlight-color:transparent}
+.pad .picked{height:38px;line-height:38px;text-align:center;font-size:28px;color:var(--gold);
   font-family:"KaiTi","DFKai-SB",serif}
 .pad .picked.empty::after{content:"—";color:#44607d}
-.cands{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;min-height:36px;margin-top:4px;width:150px}
-.cands button{width:32px;height:32px;font-size:19px;background:#0f2135;border:1px solid var(--line);
-  color:var(--txt);border-radius:6px;cursor:pointer;font-family:"KaiTi","DFKai-SB",serif;padding:0}
+.cands{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;min-height:44px;margin-top:4px;
+  width:100%}
+.cands button{width:42px;height:42px;font-size:24px;background:#0f2135;border:1px solid var(--line);
+  color:var(--txt);border-radius:8px;cursor:pointer;font-family:"KaiTi","DFKai-SB",serif;padding:0}
 .cands button.on{background:var(--gold);color:#12243a;font-weight:bold}
 .cands .busy{color:var(--dim);font-size:12px;line-height:32px}
-.padtools{display:flex;gap:6px;justify-content:center;margin:4px 0 10px;flex-wrap:wrap}
-.padtools button{font-size:12px;padding:5px 10px;background:transparent;border:1px solid var(--line);
-  color:var(--dim);border-radius:6px;cursor:pointer}
+.padtools{display:flex;gap:8px;justify-content:center;margin:6px 0 12px;flex-wrap:wrap}
+.padtools button{font-size:14px;padding:9px 14px;background:transparent;border:1px solid var(--line);
+  color:var(--dim);border-radius:8px;cursor:pointer;min-height:40px;
+  -webkit-tap-highlight-color:transparent}
 .padtools button:hover{color:var(--txt);border-color:var(--gold)}
 .kb{text-align:center;margin-top:6px}
 .kb summary{color:var(--dim);font-size:12px;cursor:pointer;list-style:none}
@@ -146,7 +167,7 @@ table.info td:first-child{color:var(--gold2);white-space:nowrap;width:90px}
     <div id="qwStage"><div class="lab">請去除一個部件，排列組合寫出一字</div></div>
     <div class="padwrap" id="pads1"></div>
     <div class="padtools" id="tools1"></div>
-    <div style="text-align:center">
+    <div class="actbar">
       <button class="act" id="ok1" disabled>送出</button>
       <button class="act ghost" id="give1" disabled>放棄看答案</button>
       <details class="kb"><summary>▸ 手寫辨識不出來？改用鍵盤輸入</summary>
@@ -176,7 +197,7 @@ table.info td:first-child{color:var(--gold2);white-space:nowrap;width:90px}
     <div class="ids" id="ids2"></div>
     <div class="padwrap" id="pads2"></div>
     <div class="padtools" id="tools2"></div>
-    <div style="text-align:center">
+    <div class="actbar">
       <button class="act" id="ok2" disabled>送出</button>
       <button class="act ghost" id="give2" disabled>放棄看答案</button>
       <details class="kb"><summary>▸ 手寫辨識不出來？改用鍵盤輸入</summary>
@@ -201,7 +222,7 @@ table.info td:first-child{color:var(--gold2);white-space:nowrap;width:90px}
     <div id="pairGrid"></div>
     <div class="padwrap" id="pads3"></div>
     <div class="padtools" id="tools3"></div>
-    <div style="text-align:center">
+    <div class="actbar">
       <button class="act" id="ok3" disabled>送出</button>
       <button class="act ghost" id="give3" disabled>公布全部答案</button>
       <details class="kb"><summary>▸ 手寫辨識不出來？改用鍵盤輸入</summary>
@@ -247,7 +268,7 @@ table.info td:first-child{color:var(--gold2);white-space:nowrap;width:90px}
     </div>
     <div class="padwrap" id="pads4"></div>
     <div class="padtools" id="tools4"></div>
-    <div style="text-align:center">
+    <div class="actbar">
       <button class="act" id="ok4" disabled>送出</button>
       <details class="kb"><summary>▸ 手寫辨識不出來？改用鍵盤輸入</summary>
         <input type="text" id="in4" maxlength="4" placeholder="四字成語" style="margin-top:8px"></details>
@@ -324,7 +345,18 @@ function mkTimer(el,total,onTick,onEnd){
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
 
 /* ============ 手寫板 + 線上辨識 ============ */
-const PADPX=300; // canvas 內部解析度
+const PADPX=300; // canvas 內部解析度（顯示大小另由 CSS --padscale 控制）
+// 手寫格縮放：0.7 ～ 1.8 倍，記住使用者的選擇
+let PS=parseFloat(localStorage.getItem('padscale')||'1');
+function applyScale(){
+  document.documentElement.style.setProperty('--padscale',PS);
+  localStorage.setItem('padscale',PS);
+}
+function padScale(dir){
+  PS=Math.min(1.8,Math.max(0.7,+(PS+dir*0.15).toFixed(2)));
+  applyScale();
+}
+applyScale();
 class Pad{
   constructor(host){
     this.el=document.createElement('div');this.el.className='pad';
@@ -332,7 +364,7 @@ class Pad{
     this.pick=document.createElement('div');this.pick.className='picked empty';
     this.cands=document.createElement('div');this.cands.className='cands';
     this.el.append(this.cv,this.pick,this.cands);host.appendChild(this.el);
-    this.ctx=this.cv.getContext('2d');this.strokes=[];this.value='';this.timer=null;
+    this.ctx=this.cv.getContext('2d');this.strokes=[];this.value='';this.timer=null;this.ptr=null;
     this.grid();this.bind();
   }
   grid(){
@@ -353,21 +385,33 @@ class Pad{
     }
   }
   pos(e){
-    const r=this.cv.getBoundingClientRect();
-    return [Math.round((e.clientX-r.left)/r.width*PADPX), Math.round((e.clientY-r.top)/r.height*PADPX)];
+    const r=this.cv.getBoundingClientRect(),cl=v=>Math.max(0,Math.min(PADPX,Math.round(v)));
+    return [cl((e.clientX-r.left)/r.width*PADPX), cl((e.clientY-r.top)/r.height*PADPX)];
   }
   bind(){
-    let drawing=false;
-    const down=e=>{if(this.locked)return;e.preventDefault();drawing=true;const[x,y]=this.pos(e);
-      this.strokes.push({x:[x],y:[y]});this.redraw();this.cv.setPointerCapture(e.pointerId)};
-    const move=e=>{if(!drawing)return;e.preventDefault();const[x,y]=this.pos(e);
-      const s=this.strokes[this.strokes.length-1];s.x.push(x);s.y.push(y);this.redraw()};
-    const up=()=>{if(!drawing)return;drawing=false;this.schedule()};
+    // 只跟隨第一根手指／筆，其他觸點忽略（避免手掌誤觸畫出雜線）
+    const down=e=>{
+      if(this.locked||this.ptr!=null)return;
+      e.preventDefault();this.ptr=e.pointerId;
+      const[x,y]=this.pos(e);this.strokes.push({x:[x],y:[y]});this.redraw();
+      try{this.cv.setPointerCapture(e.pointerId)}catch(_){}
+    };
+    const move=e=>{
+      if(this.ptr!==e.pointerId)return;
+      e.preventDefault();const[x,y]=this.pos(e);
+      const s=this.strokes[this.strokes.length-1];
+      if(s.x[s.x.length-1]===x&&s.y[s.y.length-1]===y)return;
+      s.x.push(x);s.y.push(y);this.redraw();
+    };
+    const up=e=>{
+      if(this.ptr!==e.pointerId)return;
+      this.ptr=null;this.schedule();
+    };
     this.cv.addEventListener('pointerdown',down);
     this.cv.addEventListener('pointermove',move);
     this.cv.addEventListener('pointerup',up);
     this.cv.addEventListener('pointercancel',up);
-    this.cv.addEventListener('pointerleave',up);
+    // 手指滑出格子外時不要中斷筆畫（已用 pointer capture 接住）
   }
   schedule(){clearTimeout(this.timer);this.timer=setTimeout(()=>this.recognize(),650)}
   clear(){this.strokes=[];this.value='';this.pick.textContent='';this.pick.classList.add('empty');
@@ -409,6 +453,8 @@ function makePads(hostSel,toolSel,n){
   mk('清除全部',()=>pads.forEach(p=>p.clear()));
   mk('復原上一筆',()=>{for(let i=pads.length-1;i>=0;i--)if(pads[i].strokes.length){pads[i].undo();break}});
   mk('重新辨識',()=>pads.forEach(p=>p.strokes.length&&p.recognize()));
+  mk('格子放大 ＋',()=>padScale(+1));
+  mk('縮小 －',()=>padScale(-1));
   return {
     pads,
     text(){return pads.map(p=>p.value).join('')},
